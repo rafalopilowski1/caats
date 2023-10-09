@@ -72,6 +72,7 @@ export function Timelines(props: TimelinesProps) {
 
   useEffect(() => {
     if (props.date) setNow(props.date)
+    else setNow(useNowStore.getState().now.toJSDate())
   }, [props.date?.getDate()])
 
   const [since, until] = useMemo(() => {
