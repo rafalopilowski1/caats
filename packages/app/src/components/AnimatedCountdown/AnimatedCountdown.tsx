@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon'
-import { Key, ReactNode, useMemo, useState } from 'react'
-import { useInterval } from 'react-use'
+import { Key, ReactNode, useMemo } from 'react'
 import { motion } from 'framer-motion'
+import { useNowStore } from '../../contexts/NowStore'
 
 type AnimatedValueProps = {
   children: ReactNode
@@ -39,7 +39,7 @@ export type AnimatedCountdownProps = {
 }
 
 export function AnimatedCountdown(props: AnimatedCountdownProps) {
-  const [now, setNow] = useState(DateTime.now())
+  const now = useNowStore((state) => state.now)
   const target = useMemo(() => {
     if (props.target instanceof Date) {
       return DateTime.fromJSDate(props.target)
@@ -47,10 +47,8 @@ export function AnimatedCountdown(props: AnimatedCountdownProps) {
     return props.target
   }, [props.target])
 
-  useInterval(() => setNow(DateTime.now()), 1000)
-
   const diff = useMemo(
-    () => target.diff(now).shiftTo('hours', 'minutes', 'seconds'),
+    () => target.diff(now, ['hours', 'minutes', 'seconds']),
     [target, now]
   )
 

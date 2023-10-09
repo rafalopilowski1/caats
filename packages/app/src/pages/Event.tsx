@@ -4,6 +4,8 @@ import { HiChevronDown, HiCubeTransparent } from 'react-icons/hi'
 import { Link, useParams } from 'react-router-dom'
 import { useGqlClient } from '../components'
 import { useEventDetailsQuery, useUserQuery } from '../gql/react-query'
+import { useNowStore } from '../contexts/NowStore'
+import { DateTime } from 'luxon'
 
 type DataRowProps = {
   value: [string, ReactNode]
@@ -40,6 +42,7 @@ function DataRowContainer(props: { children: ReactNode | ReactNode[] }) {
 }
 
 export default function Event() {
+  const now = useNowStore((state) => state.now)
   const { id } = useParams()
   if (!id) return null
 
@@ -71,8 +74,9 @@ export default function Event() {
   }
 
   const event = query.data.event
-  const isCurrent =
-    new Date(event.endsAt) > new Date() && new Date(event.startsAt) < new Date()
+  const eventEndsAt = DateTime.fromISO(event.endsAt)
+  const eventStartingAt = DateTime.fromISO(event.startsAt)
+  const isCurrent = eventEndsAt > now && eventStartingAt < now
 
   return (
     <div className="container max-w-md p-2 md:px-0">
@@ -134,25 +138,19 @@ export default function Event() {
           <DataRow
             value={[
               'Data',
-              new Date(event.startsAt).toLocaleDateString(undefined, {
-                dateStyle: 'full',
-              }),
+              eventStartingAt.toLocaleString(DateTime.DATE_SHORT),
             ]}
           />
           <DataRow
             value={[
               'Czas rozpoczęcia',
-              new Date(event.startsAt).toLocaleTimeString(undefined, {
-                timeStyle: 'short',
-              }),
+              eventStartingAt.toLocaleString(DateTime.TIME_24_SIMPLE),
             ]}
           />
           <DataRow
             value={[
               'Czas zakończenia',
-              new Date(event.endsAt).toLocaleTimeString(undefined, {
-                timeStyle: 'short',
-              }),
+              eventEndsAt.toLocaleString(DateTime.TIME_24_SIMPLE),
             ]}
           />
         </DataRowContainer>
@@ -163,7 +161,9 @@ export default function Event() {
           <DataRow
             value={[
               'Przetworzono',
-              new Date(event.source.createdAt).toLocaleString(),
+              DateTime.fromISO(event.source.createdAt).toLocaleString(
+                DateTime.DATETIME_SHORT_WITH_SECONDS
+              ),
             ]}
           />
           <div className="col-span-2">
@@ -202,9 +202,9 @@ export default function Event() {
               <DataRow
                 value={[
                   'Ostatnio widziany',
-                  new Date(
+                  DateTime.fromISO(
                     event.source.task.scraper.lastSeen!
-                  ).toLocaleString(),
+                  ).toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS),
                 ]}
               />
             </>
@@ -229,13 +229,17 @@ export default function Event() {
           <DataRow
             value={[
               'Zaplanowano',
-              new Date(event.source.task.createdAt).toLocaleString(),
+              DateTime.fromISO(event.source.task.createdAt).toLocaleString(
+                DateTime.DATETIME_SHORT_WITH_SECONDS
+              ),
             ]}
           />
           <DataRow
             value={[
               'Wykonano',
-              new Date(event.source.task.finishedAt!).toLocaleString(),
+              DateTime.fromISO(event.source.task.finishedAt!).toLocaleString(
+                DateTime.DATETIME_SHORT_WITH_SECONDS
+              ),
             ]}
           />
         </DataRowContainer>

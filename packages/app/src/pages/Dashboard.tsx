@@ -11,9 +11,9 @@ import { HiCalendar, HiCog, HiExternalLink, HiSearch } from 'react-icons/hi'
 import { Link } from 'react-router-dom'
 import { DateTime } from 'luxon'
 import { AnimatedCountdown } from '../components/AnimatedCountdown/AnimatedCountdown'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Timelines } from '../components/Timelines/Timelines'
-import { useInterval } from 'react-use'
+import { useNowStore } from '../contexts/NowStore'
 
 type PrimarySectionEventProps = {
   simpleEvent: SimpleEventFragment
@@ -67,8 +67,7 @@ type PrimarySectionProps = {
  */
 const useIsOnBreak = (query: UserQuery): DateTime | undefined => {
   if (!query.user.nextEvent) return undefined // if there is no next event return undefined (loading / ended studies)
-  const [now, setNow] = useState(DateTime.now())
-  useInterval(() => setNow(DateTime.now()), 1000)
+  const now = useNowStore((state) => state.now)
   const nextEventStartingDate = DateTime.fromISO(query.user.nextEvent.startsAt)
   let currentEventEndingDate: DateTime | undefined
   if (query.user.nextEvent.previous)
@@ -76,9 +75,11 @@ const useIsOnBreak = (query: UserQuery): DateTime | undefined => {
     currentEventEndingDate = DateTime.fromISO(
       query.user.nextEvent.previous.endsAt
     )
+  const diff = nextEventStartingDate.diff(now).as('minutes')
   if (
     // elsewhere you are starting your day, so also display countdown to first event 15 minutes before it
-    nextEventStartingDate.diff(now).as('minutes') <= 15
+    diff <= 15 &&
+    diff >= 0
   )
     return nextEventStartingDate
   if (
@@ -94,11 +95,12 @@ const useIsOnBreak = (query: UserQuery): DateTime | undefined => {
 }
 
 function useIsVacation(query?: UserQuery) {
+  const now = useNowStore((state) => state.now)
   const isVacation = useMemo(() => {
     if (!query?.user.nextEvent) return false // if there is no next event return false (probably loading)
     if (query.user.currentEvent) return false // if there is current event return false (that means you are not on vacation)
     if (
-      DateTime.fromISO(query.user.nextEvent?.startsAt).diffNow().as('days') < 4
+      DateTime.fromISO(query.user.nextEvent?.startsAt).diff(now).as('days') < 4
     ) {
       return false
     }
@@ -120,7 +122,7 @@ function useIsVacation(query?: UserQuery) {
 
 function PrimarySectionVacation(props: PrimarySectionProps) {
   if (!props.query || !props.query.user.nextEvent) return null
-
+  const now = useNowStore((state) => state.now)
   return (
     <div className="space-y-2">
       <h2 className="text-2xl font-semibold">
@@ -133,7 +135,7 @@ function PrimarySectionVacation(props: PrimarySectionProps) {
           {'Wracasz na uczelnię za '}
           {DateTime.fromISO(props.query.user.nextEvent.startsAt)
             .startOf('day')
-            .diffNow()
+            .diff(now)
             .shiftTo('days', 'hours')
             .normalize()
             .toHuman({ unitDisplay: 'short', maximumFractionDigits: 0 })}

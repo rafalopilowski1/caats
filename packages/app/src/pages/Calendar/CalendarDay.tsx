@@ -4,9 +4,11 @@ import { Link, useParams } from 'react-router-dom'
 import { useGqlClient } from '../../components'
 import { ScheduleEventRow } from '../../components/ScheduleEvent/ScheduleEvent'
 import { useUserEventsQuery } from '../../gql/react-query'
+import { useNowStore } from '../../contexts/NowStore'
 
 export default function CalendarDay() {
   const { date } = useParams()
+  const now = useNowStore((state) => state.now)
   const dt = DateTime.fromISO(date!)
 
   const client = useGqlClient()
@@ -28,14 +30,13 @@ export default function CalendarDay() {
             </p>
           ) : null}
           {events.data.user.events.map((e, i) => {
+            const eventStartsAt = DateTime.fromISO(e.startsAt)
+            const eventEndsAt = DateTime.fromISO(e.endsAt)
             return (
               <ScheduleEventRow
                 key={i}
                 event={e}
-                focused={
-                  new Date(e.startsAt) <= new Date() &&
-                  new Date(e.endsAt) > new Date()
-                }
+                focused={eventStartsAt <= now && eventEndsAt > now}
               />
             )
           })}

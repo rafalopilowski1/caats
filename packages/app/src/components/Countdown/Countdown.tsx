@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
 import { useCallback, useState } from 'react'
 import { useInterval } from 'react-use'
+import { useNowStore } from '../../contexts/NowStore'
 
 export type CountdownProps = {
   countdownTo: Date
@@ -8,8 +9,9 @@ export type CountdownProps = {
 
 export function Countdown(props: CountdownProps) {
   const countdownToDateTime = DateTime.fromJSDate(props.countdownTo)
+  const now = useNowStore((state) => state.now)
   const getDiff = useCallback(() => {
-    return countdownToDateTime.diffNow().shiftToAll()
+    return countdownToDateTime.diff(now).shiftToAll()
   }, [countdownToDateTime])
   const [diff, setDiff] = useState(getDiff())
   useInterval(() => setDiff(getDiff()), 1000)

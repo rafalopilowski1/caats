@@ -6,6 +6,7 @@ import { SimpleEventFragment } from '../../gql/graphql'
 import { useUserEventsQuery } from '../../gql/react-query'
 import { Timeline } from '../Timeline/Timeline'
 import { useGqlClient } from '../useGqlClient/useGqlClient'
+import { useNowStore } from '../../contexts/NowStore'
 
 function usePartitionedEvents<
   T extends Pick<SimpleEventFragment, 'startsAt' | 'endsAt'>
@@ -65,7 +66,9 @@ export type TimelinesProps = {
 }
 
 export function Timelines(props: TimelinesProps) {
-  const [now, setNow] = useState(props.date ?? new Date())
+  const [now, setNow] = useState(
+    props.date ?? useNowStore.getState().now.toJSDate()
+  )
 
   useEffect(() => {
     if (props.date) setNow(props.date)
